@@ -1,0 +1,10 @@
+{
+  "name": "js-formatting",
+  "version": "1.0.0",
+  "description": "Format JavaScript source on Apple platforms using JavaScriptCore and Prettier.",
+  "author": "Freya Ariel <hifreyaariel@icloud.com>",
+  "license": "MIT",
+  "dependencies": {
+    "prettier": "^2.4.1"
+  }
+}
