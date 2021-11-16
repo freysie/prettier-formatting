@@ -1,11 +1,12 @@
-// swift-tools-version:5.5
+// swift-tools-version:5.3
 import PackageDescription
 
 let package = Package(
   name: "javascript-formatting",
   platforms: [
-    .macOS(.v12),
-    .iOS(.v15),
+    .macOS(.v10_10),
+    .iOS(.v8),
+    .tvOS(.v9),
   ],
   products: [
     .library(
@@ -16,7 +17,7 @@ let package = Package(
   targets: [
     .target(
       name: "JavaScriptFormatting",
-      exclude: ["package.json", "yarn.lock"],
+      exclude: ["Documentation.docc", "package.json", "yarn.lock"],
       resources: [.copy("node_modules")]
     ),
     .testTarget(
