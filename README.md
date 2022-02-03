@@ -1,22 +1,22 @@
-# JavaScript Formatting
+# Prettier Formatting
 
-Format JavaScript source on Apple platforms using JavaScriptCore and [Prettier](https://github.com/prettier/prettier).
+Format source code on Apple platforms using [Prettier](https://github.com/prettier/prettier).
 
 
 ## Installation
 
 ```swift
-.package(url: "https://github.com/freyaariel/javascript-formatting.git", branch: "main")
+.package(url: "https://github.com/freyaariel/prettier-formatting.git", branch: "main")
 ```
 
 ```swift
-import JavaScriptFormatting
+import PrettierFormatting
 ```
 
 
 ## Usage
 
 ```swift
-JSFormatter.formattedString(from: "…")
+PrettierFormatter.formattedString(from: "…")
 ```
 

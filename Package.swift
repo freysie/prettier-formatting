@@ -1,28 +1,28 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.5
 import PackageDescription
 
 let package = Package(
-  name: "javascript-formatting",
+  name: "prettier-formatting",
   platforms: [
     .macOS(.v10_10),
-    .iOS(.v8),
+    .iOS(.v9),
     .tvOS(.v9),
   ],
   products: [
     .library(
-      name: "JavaScriptFormatting",
-      targets: ["JavaScriptFormatting"]
+      name: "PrettierFormatting",
+      targets: ["PrettierFormatting"]
     ),
   ],
   targets: [
     .target(
-      name: "JavaScriptFormatting",
-      exclude: ["Documentation.docc", "package.json", "yarn.lock"],
+      name: "PrettierFormatting",
+      exclude: ["package.json", "yarn.lock"],
       resources: [.copy("node_modules")]
     ),
     .testTarget(
-      name: "JavaScriptFormattingTests",
-      dependencies: ["JavaScriptFormatting"]
+      name: "PrettierFormattingTests",
+      dependencies: ["PrettierFormatting"]
     ),
   ]
 )
