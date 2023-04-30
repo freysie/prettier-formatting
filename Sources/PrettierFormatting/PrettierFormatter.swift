@@ -3,8 +3,8 @@ import JavaScriptCore
 @available(macOS 10.10, iOS 9, tvOS 9, *)
 /// A formatter that pretty prints source code in various languages.
 public class PrettierFormatter {
-  static let prettier = Bundle.module.path(forResource: "node_modules/prettier/standalone", ofType: "js")!
-  static let babelParser = Bundle.module.path(forResource: "node_modules/prettier/parser-babel", ofType: "js")!
+  static let prettier = Bundle.module.path(forResource: "standalone", ofType: "js")!
+  static let babelParser = Bundle.module.path(forResource: "parser-babel", ofType: "js")!
   
   /// The parser to user for formatting.
   public enum Parser: String {
@@ -88,7 +88,7 @@ public class PrettierFormatter {
         "parser": parser.rawValue,
         "plugins": context.objectForKeyedSubscript("prettierPlugins")!,
         "semi": false,
-      ]])
+      ] as [String: Any]])
       .toString()
   }
 }

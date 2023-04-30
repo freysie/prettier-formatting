@@ -17,8 +17,12 @@ let package = Package(
   targets: [
     .target(
       name: "PrettierFormatting",
-      exclude: ["package.json", "yarn.lock"],
-      resources: [.copy("node_modules")]
+      //exclude: ["package.json", "yarn.lock"],
+      resources: [
+        //.process("node_modules"),
+        .copy("node_modules/prettier/standalone.js"),
+        .copy("node_modules/prettier/parser-babel.js"),
+      ]
     ),
     .testTarget(
       name: "PrettierFormattingTests",
