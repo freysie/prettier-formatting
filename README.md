@@ -6,7 +6,7 @@ Format source code on Apple platforms using [Prettier](https://github.com/pretti
 ## Installation
 
 ```swift
-.package(url: "https://github.com/freyaariel/prettier-formatting.git", branch: "main")
+.package(url: "https://github.com/freysie/prettier-formatting.git", branch: "main")
 ```
 
 ```swift
