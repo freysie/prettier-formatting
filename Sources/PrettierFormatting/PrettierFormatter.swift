@@ -266,6 +266,91 @@ public class PrettierFormatter {
     }
   }
 
+  /// Synchronous version of `formattedString`. Blocks the calling thread until formatting completes.
+  public static func formattedString(
+    from string: String,
+    parser: Parser = .babel,
+    options userOptions: [String: Any]? = nil
+  ) -> String? {
+    let context = JSContext()!
+
+    context.exceptionHandler = { _, value in
+      print("js error:", value ?? "unknown")
+    }
+
+    do {
+      let prettierScript = try String(contentsOfFile: Self.prettier)
+      context.evaluateScript(prettierScript)
+    } catch {
+      print("failed loading prettier")
+      return nil
+    }
+
+    do {
+      let babelScript = try String(contentsOfFile: Self.babel)
+      context.evaluateScript(babelScript)
+    } catch {
+      print("failed loading babel")
+      return nil
+    }
+
+    do {
+      let estreeScript = try String(contentsOfFile: Self.estree)
+      context.evaluateScript(estreeScript)
+    } catch {
+      print("failed loading estree")
+      return nil
+    }
+
+    if parser == .sql {
+      do {
+        let sqlPluginScript = try String(contentsOfFile: Self.sqlPlugin)
+        context.evaluateScript(sqlPluginScript)
+      } catch {
+        print("failed loading sql plugin")
+        return nil
+      }
+    }
+
+    var options: [String: Any] = [
+      "parser": parser.rawValue,
+      "plugins": context.objectForKeyedSubscript("prettierPlugins") ?? NSNull(),
+      "semi": false,
+      "language": "postgresql",
+      "keywordCase": "upper",
+    ]
+
+    if let userOptions = userOptions {
+      options.merge(userOptions) { _, new in new }
+    }
+
+    guard
+      let formatPromise = context.evaluateScript("globalThis.prettier.format")
+        .call(withArguments: [string, options])
+    else {
+      return nil
+    }
+
+    var result: String?
+    let semaphore = DispatchSemaphore(value: 0)
+
+    let thenBlock: @convention(block) (JSValue) -> Void = { value in
+      result = value.toString()
+      semaphore.signal()
+    }
+
+    let catchBlock: @convention(block) (JSValue) -> Void = { error in
+      print("prettier format error:", error)
+      semaphore.signal()
+    }
+
+    formatPromise.invokeMethod("then", withArguments: [thenBlock])
+    formatPromise.invokeMethod("catch", withArguments: [catchBlock])
+
+    semaphore.wait()
+    return result
+  }
+
   /// Formats SQL using type-safe options. Convenience wrapper around `formattedString`.
   /// - Parameters:
   ///   - from: The SQL source to format
@@ -294,5 +379,31 @@ public class PrettierFormatter {
     if let paramTypes = options.paramTypes { sqlOptions["paramTypes"] = paramTypes }
 
     return await formattedString(from: string, parser: .sql, options: sqlOptions)
+  }
+
+  /// Synchronous version of `formattedSQLString`. Blocks until complete.
+  public static func formattedSQLString(
+    from string: String,
+    options: SQLFormatOptions = SQLFormatOptions()
+  ) -> String? {
+    var sqlOptions: [String: Any] = [
+      "language": options.language.rawValue,
+      "keywordCase": options.keywordCase.rawValue,
+      "dataTypeCase": options.dataTypeCase.rawValue,
+      "functionCase": options.functionCase.rawValue,
+      "identifierCase": options.identifierCase.rawValue,
+      "indentStyle": options.indentStyle.rawValue,
+      "logicalOperatorNewline": options.logicalOperatorNewline.rawValue,
+      "expressionWidth": options.expressionWidth,
+      "linesBetweenQueries": options.linesBetweenQueries,
+      "denseOperators": options.denseOperators,
+      "newlineBeforeSemicolon": options.newlineBeforeSemicolon,
+    ]
+
+    if let dialect = options.dialect { sqlOptions["dialect"] = dialect }
+    if let params = options.params { sqlOptions["params"] = params }
+    if let paramTypes = options.paramTypes { sqlOptions["paramTypes"] = paramTypes }
+
+    return formattedString(from: string, parser: .sql, options: sqlOptions)
   }
 }

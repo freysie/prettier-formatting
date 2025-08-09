@@ -7,12 +7,14 @@
   "type": "module",
   "dependencies": {
     "prettier": "^3.6.2",
-    "prettier-plugin-sql": "0.19.2"
+    "prettier-plugin-sql": "0.19.2",
+    "@prettier/sync": "^0.6.1"
   },
   "devDependencies": {
     "esbuild": "^0.25.8"
   },
   "scripts": {
-    "build:sql-plugin": "esbuild sql-plugin-standalone.entry.js --bundle --format=iife --global-name=PrettierSqlPluginStandalone --platform=browser --external:prettier --outfile=sql-plugin-standalone.js"
+    "build:sql-plugin": "esbuild sql-plugin-standalone.entry.js --bundle --format=iife --global-name=PrettierSqlPluginStandalone --platform=browser --external:prettier --outfile=sql-plugin-standalone.js",
+    "build:prettier-sync": "esbuild prettier-sync.entry.js --bundle --format=iife --global-name=PrettierSyncBundle --platform=browser --outfile=prettier-sync.js"
   }
 }
