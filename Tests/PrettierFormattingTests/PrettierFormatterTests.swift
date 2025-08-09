@@ -1,15 +1,73 @@
 import XCTest
+
 @testable import PrettierFormatting
 
 final class PrettierFormatterTests: XCTestCase {
-  func testPrettierVersion() throws {
-    XCTAssertEqual(PrettierFormatter.prettierVersion, "2.4.1")
+  func testPrettierVersion() {
+    XCTAssertEqual(PrettierFormatter.prettierVersion, "3.6.2")
   }
 
-  func testFormattedString() throws {
+  func testJSFormatting() async throws {
+    let formatted = await PrettierFormatter.formattedString(
+      from: "db .test.find( { id:{$gt :    200} } )")
     XCTAssertEqual(
-      PrettierFormatter.formattedString(from: "db .test.find( { id:{$gt :    200} } )"),
+      formatted,
       "db.test.find({ id: { $gt: 200 } })\n"
+    )
+  }
+
+  func testSQLFormatting() async throws {
+    let formatted = await PrettierFormatter.formattedString(
+      from: """
+        sELect  first_name,    species froM
+           animals
+                 WhERE
+         id = $1
+        """,
+      parser: .sql
+    )
+    //    print(formatted!)
+    XCTAssertEqual(
+      formatted,
+      """
+      SELECT
+        first_name,
+        species
+      FROM
+        animals
+      WHERE
+        id = $1
+
+      """
+    )
+  }
+
+  func testSQLFormattingWithOptions() async throws {
+    let formatted = await PrettierFormatter.formattedSQLString(
+      from: """
+          sELect  first_name,    species froM
+             animals
+                   WhERE
+           id = $1
+        """,
+      options: .init(
+        language: .postgresql,
+        keywordCase: .lower
+      )
+    )
+
+    XCTAssertEqual(
+      formatted,
+      """
+      select
+        first_name,
+        species
+      from
+        animals
+      where
+        id = $1
+      
+      """
     )
   }
 }

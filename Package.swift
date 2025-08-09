@@ -4,15 +4,15 @@ import PackageDescription
 let package = Package(
   name: "prettier-formatting",
   platforms: [
-    .macOS(.v10_10),
-    .iOS(.v9),
-    .tvOS(.v9),
+    .macOS(.v10_15),
+    .iOS(.v13),
+    .tvOS(.v13),
   ],
   products: [
     .library(
       name: "PrettierFormatting",
       targets: ["PrettierFormatting"]
-    ),
+    )
   ],
   targets: [
     .target(
@@ -21,7 +21,9 @@ let package = Package(
       resources: [
         //.process("node_modules"),
         .copy("node_modules/prettier/standalone.js"),
-        .copy("node_modules/prettier/parser-babel.js"),
+        .copy("node_modules/prettier/plugins/babel.js"),
+        .copy("node_modules/prettier/plugins/estree.js"),
+        .copy("sql-plugin-standalone.js"),
       ]
     ),
     .testTarget(
