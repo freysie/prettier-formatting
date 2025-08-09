@@ -8,6 +8,69 @@ public class PrettierFormatter {
   static let estree = Bundle.module.path(forResource: "estree", ofType: "js")!
   static let sqlPlugin = Bundle.module.path(forResource: "sql-plugin-standalone", ofType: "js")!
 
+  private static let jsQueue = DispatchQueue(label: "PrettierFormatting.JS", qos: .userInitiated)
+  private static var sharedContext: JSContext?
+  private static var isCorePrepared = false
+  private static var isSQLPrepared = false
+
+  @discardableResult
+  private static func ensurePrepared(loadSQL: Bool) -> Bool {
+    if !isCorePrepared {
+      let context = JSContext()!
+      context.exceptionHandler = { _, value in
+        print("js error:", value ?? "unknown")
+      }
+      do {
+        context.evaluateScript(try String(contentsOfFile: Self.prettier))
+        context.evaluateScript(try String(contentsOfFile: Self.babel))
+        context.evaluateScript(try String(contentsOfFile: Self.estree))
+      } catch {
+        print("failed preparing core prettier scripts")
+        return false
+      }
+      Self.sharedContext = context
+      Self.isCorePrepared = true
+    }
+
+    if loadSQL && !isSQLPrepared {
+      guard let context = Self.sharedContext else { return false }
+      do {
+        context.evaluateScript(try String(contentsOfFile: Self.sqlPlugin))
+      } catch {
+        print("failed preparing sql plugin script")
+        return false
+      }
+      Self.isSQLPrepared = true
+    }
+
+    return true
+  }
+
+  #if DEBUG
+    /// Test-only helper to reset internal JS state for cold-start measurements.
+    @discardableResult
+    internal static func _resetForTests() -> Bool {
+      sharedContext = nil
+      isCorePrepared = false
+      isSQLPrepared = false
+      return true
+    }
+  #endif
+
+  // MARK: - Prewarm APIs
+
+  /// Prepares Prettier core (standalone, babel, estree). Safe to call multiple times.
+  @discardableResult
+  public static func prepareFormatter() -> Bool {
+    ensurePrepared(loadSQL: false)
+  }
+
+  /// Prepares Prettier SQL plugin in addition to core. Safe to call multiple times.
+  @discardableResult
+  public static func prepareSQLFormatter() -> Bool {
+    ensurePrepared(loadSQL: true)
+  }
+
   /// The parser to user for formatting.
   public enum Parser: String {
     /// Babel.
@@ -162,8 +225,8 @@ public class PrettierFormatter {
 
   /// The current Prettier library version.
   public static var prettierVersion: String {
-    let context = JSContext()!
-    context.evaluateScript(try! String(contentsOfFile: Self.prettier))
+    _ = ensurePrepared(loadSQL: false)
+    guard let context = Self.sharedContext else { return "" }
     return context.evaluateScript("globalThis.prettier.version")!.toString()
   }
 
@@ -193,44 +256,8 @@ public class PrettierFormatter {
     parser: Parser = .babel,
     options userOptions: [String: Any]? = nil
   ) async -> String? {
-    let context = JSContext()!
-
-    context.exceptionHandler = { _, value in
-      print("js error:", value ?? "unknown")
-    }
-
-    do {
-      let prettierScript = try String(contentsOfFile: Self.prettier)
-      context.evaluateScript(prettierScript)
-    } catch {
-      print("failed loading prettier")
+    guard ensurePrepared(loadSQL: parser == .sql), let context = Self.sharedContext else {
       return nil
-    }
-
-    do {
-      let babelScript = try String(contentsOfFile: Self.babel)
-      context.evaluateScript(babelScript)
-    } catch {
-      print("failed loading babel")
-      return nil
-    }
-
-    do {
-      let estreeScript = try String(contentsOfFile: Self.estree)
-      context.evaluateScript(estreeScript)
-    } catch {
-      print("failed loading estree")
-      return nil
-    }
-
-    if parser == .sql {
-      do {
-        let sqlPluginScript = try String(contentsOfFile: Self.sqlPlugin)
-        context.evaluateScript(sqlPluginScript)
-      } catch {
-        print("failed loading sql plugin")
-        return nil
-      }
     }
 
     var options: [String: Any] = [
@@ -272,44 +299,8 @@ public class PrettierFormatter {
     parser: Parser = .babel,
     options userOptions: [String: Any]? = nil
   ) -> String? {
-    let context = JSContext()!
-
-    context.exceptionHandler = { _, value in
-      print("js error:", value ?? "unknown")
-    }
-
-    do {
-      let prettierScript = try String(contentsOfFile: Self.prettier)
-      context.evaluateScript(prettierScript)
-    } catch {
-      print("failed loading prettier")
+    guard ensurePrepared(loadSQL: parser == .sql), let context = Self.sharedContext else {
       return nil
-    }
-
-    do {
-      let babelScript = try String(contentsOfFile: Self.babel)
-      context.evaluateScript(babelScript)
-    } catch {
-      print("failed loading babel")
-      return nil
-    }
-
-    do {
-      let estreeScript = try String(contentsOfFile: Self.estree)
-      context.evaluateScript(estreeScript)
-    } catch {
-      print("failed loading estree")
-      return nil
-    }
-
-    if parser == .sql {
-      do {
-        let sqlPluginScript = try String(contentsOfFile: Self.sqlPlugin)
-        context.evaluateScript(sqlPluginScript)
-      } catch {
-        print("failed loading sql plugin")
-        return nil
-      }
     }
 
     var options: [String: Any] = [
